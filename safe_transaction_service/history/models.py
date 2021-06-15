@@ -15,6 +15,7 @@ from django.db.models.expressions import (F, OuterRef, RawSQL, Subquery, Value,
 from django.db.models.functions import Coalesce
 from django.db.models.signals import post_save
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import RegexValidator
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
@@ -1204,7 +1205,9 @@ class WebHookQuerySet(models.QuerySet):
 class WebHook(models.Model):
     objects = WebHookQuerySet.as_manager()
     address = EthereumAddressField(db_index=True, blank=True)
-    url = models.URLField()
+    # allow for hostnames without dots, e.g. http://client-gateway:3666
+    urlValidator = RegexValidator(regex=r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.?[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)')
+    url = models.CharField(max_length=512, validators=[urlValidator])
     # Configurable webhook types to listen to
     new_confirmation = models.BooleanField(default=True)
     pending_outgoing_transaction = models.BooleanField(default=True)
